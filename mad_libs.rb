@@ -1,6 +1,8 @@
 #! /usr/bin/ruby
-
 #encoding utf-8
+
+#require 'rubygems'
+#require 'pry'
 
 class MadLib
 
@@ -9,15 +11,17 @@ end
 class UserInput
 
   def request_story
-    puts('Give me a story including ((place_holder))')
-    gets
+    puts("Give me a story including ((place_holder))")
+    response = gets
+
+    response.strip
   end
 
-  def request_placeholder_choices(placeholders)
-    placeholders.each do |placeholder|
-      puts('Give me a #{placeholder}')
-      gets
-    end
+  def request_placeholder_choice(placeholder)
+    puts("Give me a #{placeholder}")
+    response = gets
+
+    response.strip
   end
 
 end
@@ -25,29 +29,30 @@ end
 class StoryParser
 
   def parse(story_text)
-    Story.new(story_text)
+    placeholder_keys = story_text.match(/((\(.*?\)))/)
+    puts "keys #{placeholder_keys}"
+    Story.new(story_text, Hash[placeholder_keys.zip([])] )
   end
 
+  private
+
+  def extract_placeholders
+  end
 end
 
-Placeholder = Struct.new(:placeholder_option, :placeholder_choice)
 
 class Story
 
   attr_reader :text, :placeholders
 
-  def initialize(text)
+  def initialize(text, placeholders = {})
     @text = text
-    @placeholders = []
+    @placeholders = placeholders
   end
 
-  def add_placeholder(placeholder)
-    placeholders << placeholder
+  def add_placeholder_choice(option, choice)
+    placeholders[options] = choice
   end
-
-  private
-
-  attr_reader :placeholder
 
 end
 
@@ -60,7 +65,10 @@ class StoryTeller
   end
 
   def output(story)
-    puts "#{story.text}"
+    puts story.text
+    puts story.placeholders
+    rendered_text = story.text.gsub(/((.*))/, story.placeholders)
+    puts rendered_text
   end
 
 end
@@ -88,11 +96,8 @@ story_builder = StoryBuilder.new(input_string)
 
 story = story_builder.build
 
-story.placeholders.each do |placeholder_option|
-  placeholder_choice = user_input.request_placeholder_choice(placeholder_option)
-  placeholder = PlaceHolder.new(placeholder_option, placeholder_choice)
-
-  story.add_placeholder(placeholder)
+story.placeholders.keys.each do |option|
+  story.placeholders[option] = user_input.request_placeholder_choice(option)
 end
 
 story_teller = StoryTeller.new(story)
